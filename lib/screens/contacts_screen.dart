@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_assessment/dummy_data.dart';
+import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 class ContactPage extends StatefulWidget {
@@ -10,6 +12,8 @@ class ContactPage extends StatefulWidget {
 }
 
 class _ContactPageState extends State<ContactPage> {
+  bool isTimeAgoFormat = false;
+  late SharedPreferences sharedPreferences;
   List<Map<String, String>> contactList = [];
 
   String convertTime(bool isTimeAgo, String dateTimeInString) {
@@ -20,7 +24,13 @@ class _ContactPageState extends State<ContactPage> {
     return dateTimeInString;
   }
 
-  void shareContact() {}
+  void shareContact(Map<String, String> contact) {
+    Share.share('Sharing Contact', subject: '''
+User Name: ${contact["user"]}
+Phone Number: ${contact["phone"]}
+Check In: ${contact["check-in"]}
+''');
+  }
 
   void sortContactList(List<Map<String, String>> cList) {
     cList.sort((a, b) {
@@ -33,8 +43,25 @@ class _ContactPageState extends State<ContactPage> {
       setState(() {
         contactList.addAll(
             contacts.sublist(contactList.length, contactList.length + 5));
+        sortContactList(contactList);
       });
     }
+  }
+
+  Future<void> getSharedPreference() async {
+    sharedPreferences = await SharedPreferences.getInstance();
+    if (sharedPreferences.getBool('isTimeAgoFormat') != null) {
+      setState(() {
+        isTimeAgoFormat = sharedPreferences.getBool('isTimeAgoFormat')!;
+      });
+    }
+  }
+
+  Future<void> setSharedPreference() async {
+    setState(() {
+      isTimeAgoFormat = !isTimeAgoFormat;
+    });
+    await sharedPreferences.setBool('isTimeAgoFormat', isTimeAgoFormat);
   }
 
   @override
@@ -42,15 +69,22 @@ class _ContactPageState extends State<ContactPage> {
     super.initState();
     contactList.addAll(contacts.take(15));
     sortContactList(contactList);
+    getSharedPreference();
   }
 
   @override
   Widget build(BuildContext context) {
-    print(contactList.length);
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Flutter Assessment"),
+          actions: [
+            Switch(
+                value: isTimeAgoFormat,
+                onChanged: (value) async {
+                  setSharedPreference();
+                }),
+          ],
         ),
         body: RefreshIndicator(
           onRefresh: () async {
@@ -81,10 +115,12 @@ class _ContactPageState extends State<ContactPage> {
                     mainAxisSize: MainAxisSize.min,
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Text(convertTime(
-                          true, contactList[index]["check-in"].toString())),
+                      Text(convertTime(isTimeAgoFormat,
+                          contactList[index]["check-in"].toString())),
                       IconButton(
-                          onPressed: shareContact,
+                          onPressed: () {
+                            shareContact(contactList[index]);
+                          },
                           icon: const Icon(Icons.share))
                     ],
                   ),
