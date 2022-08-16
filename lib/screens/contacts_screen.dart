@@ -25,11 +25,13 @@ class _ContactPageState extends State<ContactPage> {
   }
 
   void shareContact(Map<String, String> contact) {
-    Share.share('Sharing Contact', subject: '''
+    Share.share(
+      '''
 User Name: ${contact["user"]}
 Phone Number: ${contact["phone"]}
 Check In: ${contact["check-in"]}
-''');
+''',
+    );
   }
 
   void sortContactList(List<Map<String, String>> cList) {
@@ -79,11 +81,17 @@ Check In: ${contact["check-in"]}
         appBar: AppBar(
           title: const Text("Flutter Assessment"),
           actions: [
-            Switch(
-                value: isTimeAgoFormat,
-                onChanged: (value) async {
-                  setSharedPreference();
-                }),
+            Row(
+              children: [
+                const Text("TimeAgo: "),
+                Switch(
+                    activeColor: Colors.red,
+                    value: isTimeAgoFormat,
+                    onChanged: (value) async {
+                      setSharedPreference();
+                    }),
+              ],
+            ),
           ],
         ),
         body: RefreshIndicator(
