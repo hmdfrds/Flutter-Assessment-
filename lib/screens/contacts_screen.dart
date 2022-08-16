@@ -28,41 +28,70 @@ class _ContactPageState extends State<ContactPage> {
     });
   }
 
+  void addItem() {
+    if (contactList.length != contacts.length) {
+      setState(() {
+        contactList.addAll(
+            contacts.sublist(contactList.length, contactList.length + 5));
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
-    contactList.addAll(contacts);
+    contactList.addAll(contacts.take(15));
     sortContactList(contactList);
   }
 
   @override
   Widget build(BuildContext context) {
+    print(contactList.length);
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
           title: const Text("Flutter Assessment"),
         ),
-        body: ListView.separated(
-            itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(contactList[index]["user"].toString()),
-                subtitle: Text(contactList[index]["phone"].toString()),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(convertTime(
-                        true, contactList[index]["check-in"].toString())),
-                    IconButton(
-                        onPressed: shareContact, icon: const Icon(Icons.share))
-                  ],
-                ),
-              );
-            },
-            separatorBuilder: (context, index) {
-              return const SizedBox(height: 10);
-            },
-            itemCount: contacts.length),
+        body: RefreshIndicator(
+          onRefresh: () async {
+            addItem();
+          },
+          child: ListView.builder(
+              physics: const BouncingScrollPhysics(),
+              itemBuilder: (context, index) {
+                if (contactList.length == index) {
+                  if (contactList.length == contacts.length) {
+                    return Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: const BoxDecoration(color: Colors.grey),
+                      child: const Text(
+                        "You have reached end of the list",
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  }
+                  return const SizedBox();
+                }
+                return ListTile(
+                  title: Text(contactList[index]["user"].toString()),
+                  subtitle: Text(contactList[index]["phone"].toString()),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Text(convertTime(
+                          true, contactList[index]["check-in"].toString())),
+                      IconButton(
+                          onPressed: shareContact,
+                          icon: const Icon(Icons.share))
+                    ],
+                  ),
+                );
+              },
+              itemCount: contactList.length + 1),
+        ),
       ),
     );
   }
